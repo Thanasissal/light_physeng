@@ -4,7 +4,9 @@
 
 #include "Camera.h"
 #include "Math.h"
+#include "Mesh.h"
 #include "Shader.h"
+#include "Vertex.h"
 
 int main() {
 
@@ -34,59 +36,18 @@ int main() {
 
     Shader myShader("Shaders/test.vert", "Shaders/test.frag");
 
-    //VBO
-    float vertices[] = {
-        // Positions         // Colors
-        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, // 0: Front-left base
-        0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, // 1: Front-right base
-        0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, // 2: Back-right base
-        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, // 3: Back-left base
-        0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f  // 4: Top Apex (Red)
-    };
+    Mesh Triange({
+        {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)},
+        {glm::vec3( 0.0f,  0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.5f, 1.0f)}
+    },  {0,1,2,3});
 
-    // The Index Buffer telling OpenGL how to connect the vertices above
-    unsigned int indices[] = {
-        // Base (Two triangles making a square)
-        0, 1, 2,
-        2, 3, 0,
-        // Front face
-        0, 1, 4,
-        // Right face
-        1, 2, 4,
-        // Back face
-        2, 3, 4,
-        // Left face
-        3, 0, 4
-    };
-
-    unsigned int VBO, VAO, EBO; // Add EBO here
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);      // Generate the EBO
-
-    glBindVertexArray(VAO);
-
-    // 1. Bind and fill VBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // 2. Bind and fill EBO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // 3. Configure Attributes (This remains exactly the same as before)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
 
     Camera camera;
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 900.0f / 600.0f, 0.1f, 100.0f);
 
     myShader.use();
-    myShader.setMat4("view", camera.test_camera);
+    myShader.setMat4("view", camera.getCurrentView());
     myShader.setMat4("projection", projection);
 
     // Main render loop
@@ -108,9 +69,7 @@ int main() {
         myShader.setMat4("view", view);
         myShader.setMat4("model", model);
 
-        // 4. BIND VAO AND DRAW
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+        Triange.Draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
